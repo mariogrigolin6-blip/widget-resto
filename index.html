@@ -130,22 +130,24 @@
   .widget.minimized .body { display: none; }
 
   /* Pagina di lancio (visibile solo nella finestra principale) */
+  html, body { height: 100%; }
   .launcher {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    min-height: 100vh; background: #f0f4f8; font-family: 'Segoe UI', system-ui, sans-serif;
-    padding: 40px 20px; text-align: center;
+    height: 100vh; width: 100vw; background: linear-gradient(160deg, #1b4332 0%, #2d6a4f 50%, #40916c 100%);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    padding: 40px 20px; text-align: center; position: fixed; top: 0; left: 0;
   }
-  .launcher h1 { font-size: 28px; font-weight: 800; color: #1b4332; margin-bottom: 10px; }
-  .launcher p { font-size: 16px; color: #555; margin-bottom: 30px; max-width: 400px; }
+  .launcher-logo { font-size: 56px; margin-bottom: 20px; }
+  .launcher h1 { font-size: 42px; font-weight: 800; color: white; margin-bottom: 14px; letter-spacing: -0.5px; }
+  .launcher p { font-size: 18px; color: rgba(255,255,255,0.85); margin-bottom: 48px; max-width: 480px; line-height: 1.6; }
   .launch-btn {
-    background: linear-gradient(135deg, #1b4332, #2d6a4f);
-    color: white; border: none; border-radius: 12px;
-    padding: 16px 36px; font-size: 18px; font-weight: 700;
-    cursor: pointer; box-shadow: 0 4px 16px rgba(45,106,79,0.35);
+    background: white; color: #1b4332; border: none; border-radius: 14px;
+    padding: 18px 48px; font-size: 20px; font-weight: 800;
+    cursor: pointer; box-shadow: 0 8px 32px rgba(0,0,0,0.25);
     transition: transform 0.15s, box-shadow 0.15s;
   }
-  .launch-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(45,106,79,0.4); }
-  .launch-note { font-size: 12px; color: #aaa; margin-top: 16px; }
+  .launch-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+  .launch-note { font-size: 13px; color: rgba(255,255,255,0.55); margin-top: 20px; line-height: 1.6; }
 </style>
 </head>
 <body>
@@ -159,10 +161,11 @@
     // Mostra pagina launcher
     document.write(`
       <div class="launcher">
+        <div class="launcher-logo">🧾</div>
         <h1>Widget Resto</h1>
-        <p>Calcola il resto e suggerisce la cifra ottimale per non avere spiccioli.</p>
+        <p>Calcola il resto in automatico, semplificando l'attività ed evitando errori. Usalo mentre lavori sul tuo gestionale.</p>
         <button class="launch-btn" onclick="apriWidget()">▶ Apri Widget</button>
-        <div class="launch-note">Si aprirà una piccola finestra indipendente.<br>Potrai usarla mentre lavori su Winfarm.</div>
+        <div class="launch-note">Si aprirà una piccola finestra indipendente.<br>Rimarrà visibile mentre usi il tuo gestionale.</div>
       </div>
     `);
   }
