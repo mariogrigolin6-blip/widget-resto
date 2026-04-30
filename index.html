@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Widget Resto</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: transparent; }
+
+  @media (min-width: 600px) {
+    body { display: flex; justify-content: flex-end; align-items: flex-start; min-height: 100vh; padding: 12px; background: rgba(0,0,0,0.06); }
+    .widget { width: 320px; border-radius: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.22); position: fixed; bottom: 12px; right: 12px; }
+  }
+  @media (max-width: 599px) {
+    body { background: #f0f4f8; min-height: 100vh; }
+    .widget { width: 100%; border-radius: 0; min-height: 100vh; }
+  }
+
+  .widget { background: white; overflow: hidden; }
+
+  .header {
+    background: linear-gradient(135deg, #1b4332, #2d6a4f);
+    color: white; padding: 10px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: default; user-select: none;
+  }
+  .header h1 { font-size: 15px; font-weight: 700; }
+  .header-sub { font-size: 10px; opacity: 0.7; }
+
+  .btn-minimize {
+    background: rgba(255,255,255,0.2); border: none; color: white;
+    width: 24px; height: 24px; border-radius: 50%; font-size: 16px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s; flex-shrink: 0; line-height: 1;
+  }
+  .btn-minimize:hover { background: rgba(255,255,255,0.35); }
+
+  .body { padding: 12px 14px 14px; }
+  .field-group { margin-bottom: 10px; }
+
+  label {
+    display: block; font-size: 10px; font-weight: 700; color: #777;
+    text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 4px;
+  }
+
+  .input-wrap {
+    display: flex; align-items: center;
+    border: 2px solid #e0e0e0; border-radius: 8px; overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .input-wrap:focus-within { border-color: #2d6a4f; }
+
+  .euro-sign {
+    background: #f5f5f5; padding: 8px 10px; font-size: 14px;
+    color: #888; border-right: 2px solid #e0e0e0; font-weight: 700;
+  }
+
+  input[type="number"] {
+    border: none; outline: none; font-size: 22px; font-weight: 800;
+    color: #111; padding: 6px 10px; width: 100%; background: white;
+  }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+  .quick-btns { display: flex; gap: 5px; margin-top: 6px; flex-wrap: wrap; }
+  .quick-btn {
+    background: #e8f5e9; color: #1b4332; border: none;
+    border-radius: 5px; padding: 4px 9px; font-size: 12px; font-weight: 700;
+    cursor: pointer; transition: background 0.12s;
+  }
+  .quick-btn:hover { background: #b7dfc4; }
+
+  .result-box {
+    background: #f6fffa; border: 2px solid #b7e4c7;
+    border-radius: 10px; padding: 10px 12px; margin-top: 2px;
+  }
+  .result-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; }
+  .result-label { font-size: 11px; color: #777; }
+  .result-value { font-size: 16px; font-weight: 800; color: #2d6a4f; }
+  .result-value.big { font-size: 30px; color: #1b4332; }
+  .divider { border: none; border-top: 1px solid #d8f3dc; margin: 6px 0; }
+
+  .spiccioli-tip {
+    margin-top: 8px; background: #f3e5f5; border: 2px solid #ce93d8;
+    border-radius: 7px; padding: 7px 10px;
+    display: flex; justify-content: space-between; align-items: center;
+    cursor: pointer; font-size: 11px; color: #555; transition: background 0.12s; gap: 8px;
+  }
+  .spiccioli-tip:hover { background: #e1bee7; }
+  .spiccioli-resto { font-size: 15px; font-weight: 800; color: #6a1b9a; white-space: nowrap; }
+
+  .suggestions-title {
+    font-size: 10px; font-weight: 700; color: #999;
+    text-transform: uppercase; letter-spacing: 0.6px; margin: 12px 0 6px;
+  }
+  .suggestion-cards { display: flex; flex-direction: column; gap: 5px; }
+
+  .suggestion-card {
+    background: #fffde7; border: 2px solid #ffe082;
+    border-radius: 8px; padding: 7px 10px;
+    display: flex; justify-content: space-between; align-items: center;
+    cursor: pointer; transition: all 0.12s;
+  }
+  .suggestion-card:hover { background: #fff8c4; border-color: #ffc107; }
+  .suggestion-card.best { background: #e8f5e9; border-color: #66bb6a; }
+  .suggestion-card.best:hover { background: #c8e6c9; border-color: #43a047; }
+  .suggestion-card.tipo-b { background: #f3e5f5; border-color: #ce93d8; }
+  .suggestion-card.tipo-b:hover { background: #e1bee7; border-color: #ab47bc; }
+
+  .sug-main { font-size: 12px; font-weight: 700; color: #222; }
+  .sug-sub { font-size: 10px; color: #999; margin-top: 1px; }
+  .sug-right { text-align: right; flex-shrink: 0; margin-left: 8px; }
+  .sug-resto { font-size: 15px; font-weight: 800; color: #2d6a4f; }
+  .sug-label { font-size: 10px; color: #aaa; }
+
+  .badge-best {
+    background: #43a047; color: white; font-size: 9px; font-weight: 700;
+    padding: 1px 5px; border-radius: 20px; margin-left: 4px; vertical-align: middle;
+  }
+
+  .reset-btn {
+    display: block; width: 100%; margin-top: 12px; padding: 8px;
+    background: #f5f5f5; border: none; border-radius: 8px;
+    font-size: 12px; color: #aaa; cursor: pointer;
+    transition: background 0.12s; font-weight: 600;
+  }
+  .reset-btn:hover { background: #e8e8e8; color: #666; }
+
+  .widget.minimized .body { display: none; }
+
+  /* Pagina di lancio (visibile solo nella finestra principale) */
+  .launcher {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100vh; background: #f0f4f8; font-family: 'Segoe UI', system-ui, sans-serif;
+    padding: 40px 20px; text-align: center;
+  }
+  .launcher h1 { font-size: 28px; font-weight: 800; color: #1b4332; margin-bottom: 10px; }
+  .launcher p { font-size: 16px; color: #555; margin-bottom: 30px; max-width: 400px; }
+  .launch-btn {
+    background: linear-gradient(135deg, #1b4332, #2d6a4f);
+    color: white; border: none; border-radius: 12px;
+    padding: 16px 36px; font-size: 18px; font-weight: 700;
+    cursor: pointer; box-shadow: 0 4px 16px rgba(45,106,79,0.35);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .launch-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(45,106,79,0.4); }
+  .launch-note { font-size: 12px; color: #aaa; margin-top: 16px; }
+</style>
+</head>
+<body>
+
+<script>
+  // Se siamo nella finestra popup (ha opener e nome 'widgetresto'), mostra il widget
+  // Se siamo nella finestra principale, mostra il launcher
+  const isPopup = window.name === 'widgetresto';
+
+  if (!isPopup) {
+    // Mostra pagina launcher
+    document.write(`
+      <div class="launcher">
+        <h1>Widget Resto</h1>
+        <p>Calcola il resto e suggerisce la cifra ottimale per non avere spiccioli.</p>
+        <button class="launch-btn" onclick="apriWidget()">▶ Apri Widget</button>
+        <div class="launch-note">Si aprirà una piccola finestra indipendente.<br>Potrai usarla mentre lavori su Winfarm.</div>
+      </div>
+    `);
+  }
+
+  function apriWidget() {
+    const w = 340, h = 620;
+    const left = window.screen.width - w - 20;
+    const top  = window.screen.height - h - 60;
+    const popup = window.open(
+      window.location.href,
+      'widgetresto',
+      `width=${w},height=${h},left=${left},top=${top},resizable=yes,scrollbars=no,toolbar=no,menubar=no,location=no,status=no`
+    );
+    if (!popup) {
+      alert('Il browser ha bloccato il popup!\nVai nelle impostazioni di Chrome → "Popup e reindirizzamenti" → consenti questo sito.');
+    } else {
+      popup.focus();
+    }
+  }
+</script>
+
+<!-- WIDGET (visibile solo nella finestra popup) -->
+<div class="widget" id="widget" style="display:none">
+  <div class="header" id="header">
+    <div>
+      <h1>Widget Resto</h1>
+      <div class="header-sub">Suggerisce la cifra ottimale</div>
+    </div>
+    <button class="btn-minimize" id="btn-min" onclick="toggleMinimize()">−</button>
+  </div>
+
+  <div class="body">
+    <div class="field-group">
+      <label>Totale da pagare</label>
+      <div class="input-wrap">
+        <span class="euro-sign">€</span>
+        <input type="number" id="totale" placeholder="0,00" min="0" step="0.01" autofocus inputmode="decimal" />
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label>Dato dal cliente</label>
+      <div class="input-wrap">
+        <span class="euro-sign">€</span>
+        <input type="number" id="dato" placeholder="0,00" min="0" step="0.01" inputmode="decimal" />
+      </div>
+      <div class="quick-btns" id="quick-btns"></div>
+    </div>
+
+    <div id="result-area"></div>
+    <div id="suggestions-area"></div>
+    <button class="reset-btn" onclick="resetAll()">↺ Azzera</button>
+  </div>
+</div>
+
+<script>
+  // Mostra widget solo se siamo nel popup
+  if (window.name === 'widgetresto') {
+    document.getElementById('widget').style.display = 'block';
+    document.body.style.background = 'transparent';
+  }
+
+  const totaleEl = document.getElementById('totale');
+  const datoEl   = document.getElementById('dato');
+  const resultArea = document.getElementById('result-area');
+  const suggestionsArea = document.getElementById('suggestions-area');
+  const quickBtnsEl = document.getElementById('quick-btns');
+  const widget = document.getElementById('widget');
+  const btnMin = document.getElementById('btn-min');
+
+  function toggleMinimize() {
+    widget.classList.toggle('minimized');
+    btnMin.textContent = widget.classList.contains('minimized') ? '+' : '−';
+  }
+
+  // Drag
+  if (widget) {
+    const header = document.getElementById('header');
+    let dragging = false, ox = 0, oy = 0;
+    if (header) {
+      header.addEventListener('mousedown', e => {
+        if (e.target === btnMin) return;
+        dragging = true;
+        const r = widget.getBoundingClientRect();
+        ox = e.clientX - r.left; oy = e.clientY - r.top;
+        header.style.cursor = 'grabbing';
+      });
+      document.addEventListener('mousemove', e => {
+        if (!dragging) return;
+        widget.style.left = (e.clientX - ox) + 'px';
+        widget.style.top  = (e.clientY - oy) + 'px';
+      });
+      document.addEventListener('mouseup', () => { dragging = false; if(header) header.style.cursor = 'default'; });
+    }
+  }
+
+  function fmt(n) {
+    if (Math.abs(n - Math.round(n)) < 0.005) return Math.round(n) + ' €';
+    return n.toFixed(2).replace('.', ',') + ' €';
+  }
+
+  function getSuggestions(totale) {
+    const tc = Math.round(totale * 100);
+    const cents = tc % 100;
+    const tipoA = [], tipoB = [];
+
+    [5,10,20,50,100,200].forEach(b => {
+      const rc = b * 100 - tc;
+      if (rc >= 0 && rc % 100 === 0) tipoA.push({ dato: b, resto: rc / 100 });
+    });
+    const ne = Math.ceil(totale);
+    [0,1,2,5,10,20].forEach(ex => {
+      const c = ne + ex;
+      const rc = c * 100 - tc;
+      if (rc >= 0 && rc % 100 === 0 && !tipoA.find(s => s.dato === c))
+        tipoA.push({ dato: c, resto: rc / 100 });
+    });
+
+    if (cents > 0) {
+      const add = (100 - cents) / 100;
+      [5,10,20,50,100,200].forEach(b => {
+        const dato = Math.round((b + add) * 100) / 100;
+        const rc = Math.round(dato * 100) - tc;
+        if (rc >= 0 && rc % 100 === 0)
+          tipoB.push({ dato, resto: rc / 100, aggiunta: add, base: b });
+      });
+    }
+
+    return {
+      tipoA: tipoA.sort((a,b) => a.dato - b.dato).slice(0,4),
+      tipoB: tipoB.sort((a,b) => a.dato - b.dato).slice(0,3)
+    };
+  }
+
+  function updateQuickBtns(totale) {
+    if (!totale || totale <= 0) { quickBtnsEl.innerHTML = ''; return; }
+    const amounts = [5,10,20,50,100,200].filter(b => b >= totale);
+    const c1 = Math.ceil(totale);
+    if (c1 > totale && !amounts.includes(c1)) amounts.unshift(c1);
+    quickBtnsEl.innerHTML = amounts.slice(0,5)
+      .map(a => `<button class="quick-btn" onclick="setDato(${a})">${a} €</button>`).join('');
+  }
+
+  function setDato(val) { datoEl.value = val; calculate(); datoEl.focus(); }
+
+  function calculate() {
+    const totale = parseFloat(totaleEl.value);
+    const dato   = parseFloat(datoEl.value);
+    updateQuickBtns(totale);
+
+    if (!totale || totale <= 0) { resultArea.innerHTML = ''; suggestionsArea.innerHTML = ''; return; }
+    renderSuggestions(getSuggestions(totale));
+    if (!dato || dato <= 0) { resultArea.innerHTML = ''; return; }
+
+    const resto = Math.round((dato - totale) * 100) / 100;
+
+    if (dato < totale) {
+      resultArea.innerHTML = `<div class="result-box" style="border-color:#ffcdd2;background:#fff5f5">
+        <div class="result-row"><span class="result-label">⚠️ Mancano ancora</span>
+        <span class="result-value" style="color:#c62828">${fmt(Math.abs(resto))}</span></div></div>`;
+      return;
+    }
+
+    const restoCents = Math.round(resto * 100);
+    const centsSporca = restoCents % 100;
+    let tip = '';
+    if (centsSporca > 0) {
+      const toglie = centsSporca / 100;
+      const ndToglie = Math.round((dato - toglie) * 100) / 100;
+      const nrToglie = Math.round((ndToglie - totale) * 100) / 100;
+      const aggiunge = (100 - centsSporca) / 100;
+      const ndAggiunge = Math.round((dato + aggiunge) * 100) / 100;
+      const nrAggiunge = Math.round((ndAggiunge - totale) * 100) / 100;
+      const puoToglie = ndToglie >= totale;
+
+      if (puoToglie && toglie <= aggiunge) {
+        tip = `<div class="spiccioli-tip" onclick="setDato(${ndToglie})">
+          <span>✂️ Cliente toglie <strong>${toglie.toFixed(2).replace('.',',')} €</strong> → dà ${ndToglie.toFixed(2).replace('.',',')} €</span>
+          <span class="spiccioli-resto">= ${fmt(nrToglie)}</span></div>`;
+      } else {
+        tip = `<div class="spiccioli-tip" onclick="setDato(${ndAggiunge})">
+          <span>🪙 Cliente aggiunge <strong>${aggiunge.toFixed(2).replace('.',',')} €</strong> → dà ${ndAggiunge.toFixed(2).replace('.',',')} €</span>
+          <span class="spiccioli-resto">= ${fmt(nrAggiunge)}</span></div>`;
+      }
+    }
+
+    resultArea.innerHTML = `<div class="result-box">
+      <div class="result-row"><span class="result-label">Totale</span><span class="result-value">${fmt(totale)}</span></div>
+      <div class="result-row"><span class="result-label">Ricevuto</span><span class="result-value">${fmt(dato)}</span></div>
+      <hr class="divider">
+      <div class="result-row">
+        <span class="result-label" style="font-size:12px;font-weight:700;color:#1b4332">RESTO DA DARE</span>
+        <span class="result-value big">${fmt(resto)}</span>
+      </div>${tip}</div>`;
+  }
+
+  function renderSuggestions({ tipoA, tipoB }) {
+    if (!tipoA.length && !tipoB.length) { suggestionsArea.innerHTML = ''; return; }
+
+    const cardsA = tipoA.map((s, i) => {
+      const best = i === 0 && s.resto > 0;
+      return `<div class="suggestion-card ${best ? 'best' : ''}" onclick="setDato(${s.dato})">
+        <div><div class="sug-main">Cliente dà <strong>${s.dato} €</strong>${best ? '<span class="badge-best">✓</span>' : ''}</div>
+        <div class="sug-sub">tocca per calcolare</div></div>
+        <div class="sug-right"><div class="sug-resto">${s.resto === 0 ? 'Esatto' : fmt(s.resto)}</div>
+        <div class="sug-label">resto intero</div></div></div>`;
+    }).join('');
+
+    const cardsB = tipoB.map(s =>
+      `<div class="suggestion-card tipo-b" onclick="setDato(${s.dato})">
+        <div><div class="sug-main"><strong>${s.base} €</strong> + <strong>${s.aggiunta.toFixed(2).replace('.',',')} €</strong></div>
+        <div class="sug-sub">dà ${s.dato.toFixed(2).replace('.',',')} € in tutto</div></div>
+        <div class="sug-right"><div class="sug-resto">${s.resto === 0 ? 'Esatto!' : fmt(s.resto)}</div>
+        <div class="sug-label">resto intero</div></div></div>`
+    ).join('');
+
+    suggestionsArea.innerHTML =
+      (tipoA.length ? `<div class="suggestions-title">💡 Banconota → resto intero</div><div class="suggestion-cards">${cardsA}</div>` : '') +
+      (tipoB.length ? `<div class="suggestions-title" style="margin-top:10px">🪙 + spiccioli → resto intero</div><div class="suggestion-cards">${cardsB}</div>` : '');
+  }
+
+  function resetAll() {
+    totaleEl.value = ''; datoEl.value = '';
+    resultArea.innerHTML = ''; suggestionsArea.innerHTML = '';
+    quickBtnsEl.innerHTML = ''; totaleEl.focus();
+  }
+
+  if (totaleEl) totaleEl.addEventListener('input', calculate);
+  if (datoEl) datoEl.addEventListener('input', calculate);
+  if (totaleEl) totaleEl.addEventListener('keydown', e => { if (e.key === 'Enter') datoEl.focus(); });
+</script>
+</body>
+</html>
