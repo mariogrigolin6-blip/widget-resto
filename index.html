@@ -128,10 +128,64 @@
   .reset-btn:hover { background: #e8e8e8; color: #666; }
 
   .widget.minimized .body { display: none; }
+
+  /* Pagina di lancio (visibile solo nella finestra principale) */
+  .launcher {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100vh; background: #f0f4f8; font-family: 'Segoe UI', system-ui, sans-serif;
+    padding: 40px 20px; text-align: center;
+  }
+  .launcher h1 { font-size: 28px; font-weight: 800; color: #1b4332; margin-bottom: 10px; }
+  .launcher p { font-size: 16px; color: #555; margin-bottom: 30px; max-width: 400px; }
+  .launch-btn {
+    background: linear-gradient(135deg, #1b4332, #2d6a4f);
+    color: white; border: none; border-radius: 12px;
+    padding: 16px 36px; font-size: 18px; font-weight: 700;
+    cursor: pointer; box-shadow: 0 4px 16px rgba(45,106,79,0.35);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .launch-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(45,106,79,0.4); }
+  .launch-note { font-size: 12px; color: #aaa; margin-top: 16px; }
 </style>
 </head>
 <body>
-<div class="widget" id="widget">
+
+<script>
+  // Se siamo nella finestra popup (ha opener e nome 'widgetresto'), mostra il widget
+  // Se siamo nella finestra principale, mostra il launcher
+  const isPopup = window.name === 'widgetresto';
+
+  if (!isPopup) {
+    // Mostra pagina launcher
+    document.write(`
+      <div class="launcher">
+        <h1>Widget Resto</h1>
+        <p>Calcola il resto e suggerisce la cifra ottimale per non avere spiccioli.</p>
+        <button class="launch-btn" onclick="apriWidget()">▶ Apri Widget</button>
+        <div class="launch-note">Si aprirà una piccola finestra indipendente.<br>Potrai usarla mentre lavori su Winfarm.</div>
+      </div>
+    `);
+  }
+
+  function apriWidget() {
+    const w = 340, h = 620;
+    const left = window.screen.width - w - 20;
+    const top  = window.screen.height - h - 60;
+    const popup = window.open(
+      window.location.href,
+      'widgetresto',
+      `width=${w},height=${h},left=${left},top=${top},resizable=yes,scrollbars=no,toolbar=no,menubar=no,location=no,status=no`
+    );
+    if (!popup) {
+      alert('Il browser ha bloccato il popup!\nVai nelle impostazioni di Chrome → "Popup e reindirizzamenti" → consenti questo sito.');
+    } else {
+      popup.focus();
+    }
+  }
+</script>
+
+<!-- WIDGET (visibile solo nella finestra popup) -->
+<div class="widget" id="widget" style="display:none">
   <div class="header" id="header">
     <div>
       <h1>Widget Resto</h1>
@@ -165,6 +219,12 @@
 </div>
 
 <script>
+  // Mostra widget solo se siamo nel popup
+  if (window.name === 'widgetresto') {
+    document.getElementById('widget').style.display = 'block';
+    document.body.style.background = 'transparent';
+  }
+
   const totaleEl = document.getElementById('totale');
   const datoEl   = document.getElementById('dato');
   const resultArea = document.getElementById('result-area');
@@ -178,24 +238,25 @@
     btnMin.textContent = widget.classList.contains('minimized') ? '+' : '−';
   }
 
-  // Drag solo desktop
-  if (window.innerWidth >= 600) {
+  // Drag
+  if (widget) {
     const header = document.getElementById('header');
     let dragging = false, ox = 0, oy = 0;
-    header.addEventListener('mousedown', e => {
-      if (e.target === btnMin) return;
-      dragging = true;
-      const r = widget.getBoundingClientRect();
-      ox = e.clientX - r.left; oy = e.clientY - r.top;
-      widget.style.bottom = 'auto'; widget.style.right = 'auto';
-      header.style.cursor = 'grabbing';
-    });
-    document.addEventListener('mousemove', e => {
-      if (!dragging) return;
-      widget.style.left = (e.clientX - ox) + 'px';
-      widget.style.top  = (e.clientY - oy) + 'px';
-    });
-    document.addEventListener('mouseup', () => { dragging = false; header.style.cursor = 'default'; });
+    if (header) {
+      header.addEventListener('mousedown', e => {
+        if (e.target === btnMin) return;
+        dragging = true;
+        const r = widget.getBoundingClientRect();
+        ox = e.clientX - r.left; oy = e.clientY - r.top;
+        header.style.cursor = 'grabbing';
+      });
+      document.addEventListener('mousemove', e => {
+        if (!dragging) return;
+        widget.style.left = (e.clientX - ox) + 'px';
+        widget.style.top  = (e.clientY - oy) + 'px';
+      });
+      document.addEventListener('mouseup', () => { dragging = false; if(header) header.style.cursor = 'default'; });
+    }
   }
 
   function fmt(n) {
@@ -269,16 +330,12 @@
     const centsSporca = restoCents % 100;
     let tip = '';
     if (centsSporca > 0) {
-      // Opzione A: cliente TOGLIE i centesimi sporchi → resto intero per difetto
       const toglie = centsSporca / 100;
       const ndToglie = Math.round((dato - toglie) * 100) / 100;
       const nrToglie = Math.round((ndToglie - totale) * 100) / 100;
-
-      // Opzione B: cliente AGGIUNGE i centesimi mancanti → resto intero per eccesso
       const aggiunge = (100 - centsSporca) / 100;
       const ndAggiunge = Math.round((dato + aggiunge) * 100) / 100;
       const nrAggiunge = Math.round((ndAggiunge - totale) * 100) / 100;
-
       const puoToglie = ndToglie >= totale;
 
       if (puoToglie && toglie <= aggiunge) {
@@ -333,9 +390,9 @@
     quickBtnsEl.innerHTML = ''; totaleEl.focus();
   }
 
-  totaleEl.addEventListener('input', calculate);
-  datoEl.addEventListener('input', calculate);
-  totaleEl.addEventListener('keydown', e => { if (e.key === 'Enter') datoEl.focus(); });
+  if (totaleEl) totaleEl.addEventListener('input', calculate);
+  if (datoEl) datoEl.addEventListener('input', calculate);
+  if (totaleEl) totaleEl.addEventListener('keydown', e => { if (e.key === 'Enter') datoEl.focus(); });
 </script>
 </body>
 </html>
